@@ -1,4 +1,5 @@
 import { useState, type FC, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { ForjamundoLogo } from "./shared";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
@@ -89,6 +90,10 @@ const LandingPage: FC = () => {
             </a>
           </div>
         </div>
+
+        <Link to="/feedback" className="feedback-fab">
+          Acessar Folha de Feedback →
+        </Link>
       </div>
     </>
   );
@@ -263,6 +268,40 @@ const landingStyles = `
 
   .landing-footer a:hover {
     opacity: 0.8;
+  }
+
+  .feedback-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 100;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.08em;
+    padding: 16px 28px;
+    border-radius: 8px;
+    background: #623C15;
+    color: #F6EDDF;
+    text-decoration: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    transition: all 0.25s;
+  }
+
+  .feedback-fab:hover {
+    background: #7a4a1a;
+    box-shadow: 0 6px 28px rgba(98, 60, 21, 0.4);
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 600px) {
+    .feedback-fab {
+      bottom: 16px;
+      right: 16px;
+      left: 16px;
+      text-align: center;
+      font-size: 1rem;
+      padding: 14px 20px;
+    }
   }
 `;
 

@@ -15,7 +15,7 @@ const TO_EMAIL = process.env.TO_EMAIL || "contato@forjamundo.com.br";
 
 // Admin credentials
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
-const ADMIN_PASS = process.env.ADMIN_PASS || "#Ph16019222";
+const ADMIN_PASS = process.env.ADMIN_PASS || "admin";
 
 // ── Database ────────────────────────────────────────────────────────
 const db = new Database(DB_PATH);
