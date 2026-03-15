@@ -1,41 +1,19 @@
 import { useState, useCallback, useMemo, type FC, type ChangeEvent } from "react";
+import { Link } from "react-router-dom";
 import { ForjamundoLogo, globalStyles } from "./shared";
-
-// ── Data ────────────────────────────────────────────────────────────
-const SCALE_QUESTIONS = [
-  { num: 1, title: "Diversão Geral", desc: "Quão divertido foi jogar este jogo?" },
-  { num: 2, title: "Engajamento", desc: "Você se sentiu envolvido e interessado durante toda a partida?" },
-  { num: 3, title: "Clareza das Regras", desc: "As regras foram fáceis de entender e seguir?" },
-  { num: 4, title: "Fluidez do Turno", desc: "O jogo fluiu bem, sem pausas longas ou confusão entre os turnos?" },
-  { num: 5, title: "Agência do Jogador", desc: "Você sentiu que suas decisões importavam para o resultado?" },
-  { num: 6, title: "Equilíbrio", desc: "O jogo pareceu justo e equilibrado entre os jogadores?" },
-  { num: 7, title: "Temática", desc: "O tema do jogo ficou claro e envolvente durante a partida?" },
-  { num: 8, title: "Ritmo / Pacing", desc: "A duração do jogo pareceu adequada? (1 = muito longo, 10 = perfeito)" },
-  { num: 9, title: "Tensão e Emoção", desc: "Você sentiu que a partida foi disputada e emocionante?" },
-  { num: 10, title: "Interação entre Jogadores", desc: "Houve interação suficiente e interessante entre os jogadores?" },
-  { num: 11, title: "Curva de Aprendizado", desc: "Quão rápido você se sentiu confortável jogando?" },
-  { num: 12, title: "Rejogabilidade", desc: "Você gostaria de jogar este jogo novamente?" },
-  { num: 13, title: "Componentes e Usabilidade", desc: "Os componentes foram práticos e fáceis de usar?" },
-  { num: 14, title: "Impressão Geral", desc: "Qual sua nota geral para este jogo nesta sessão?" },
-] as const;
-
-const OPEN_QUESTIONS = [
-  { num: 15, title: "Momento Memorável", desc: "Qual foi o momento mais memorável e/ou divertido da partida? Descreva o que aconteceu." },
-  { num: 16, title: "Frustrações", desc: "O que mais te frustrou ou confundiu durante o jogo? Descreva a situação." },
-  { num: 17, title: "Sugestão de Mudança", desc: "Se você pudesse mudar uma única coisa no jogo, o que mudaria e por quê?" },
-  { num: 18, title: "Elevator Pitch", desc: "Como você descreveria este jogo para um amigo que nunca jogou?" },
-] as const;
+import { useTranslation } from "./i18n";
+import { LanguageToggle } from "./components/LanguageToggle";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 
 // ── Types ───────────────────────────────────────────────────────────
 interface SessionData {
-  nomeDoJogo: string;
-  data: string;
-  seuNome: string;
-  numeroDeJogadores: string;
-  versao: string;
-  duracaoDaPartida: string;
+  gameName: string;
+  date: string;
+  playerName: string;
+  playerCount: string;
+  version: string;
+  duration: string;
 }
 
 type Scales = Record<number, number | null>;
@@ -90,15 +68,16 @@ const ScaleButton: FC<{
 
 // ── Main Component ──────────────────────────────────────────────────
 const FeedbackForm: FC = () => {
+  const { t } = useTranslation();
   const today = new Date().toISOString().split("T")[0];
 
   const [session, setSession] = useState<SessionData>({
-    nomeDoJogo: "",
-    data: today,
-    seuNome: "",
-    numeroDeJogadores: "",
-    versao: "",
-    duracaoDaPartida: "",
+    gameName: "",
+    date: today,
+    playerName: "",
+    playerCount: "",
+    version: "",
+    duration: "",
   });
 
   const [scales, setScales] = useState<Scales>({});
@@ -123,12 +102,12 @@ const FeedbackForm: FC = () => {
 
   // Progress
   const progress = useMemo(() => {
-    const totalFields = SCALE_QUESTIONS.length + OPEN_QUESTIONS.length + 6;
+    const totalFields = t.feedback.scaleQuestions.length + t.feedback.openQuestions.length + 6;
     let filled = Object.keys(scales).length;
     filled += Object.values(openAnswers).filter((v) => v.trim()).length;
     filled += Object.values(session).filter((v) => v.trim()).length;
     return Math.min((filled / totalFields) * 100, 100);
-  }, [scales, openAnswers, session]);
+  }, [scales, openAnswers, session, t.feedback.scaleQuestions.length, t.feedback.openQuestions.length]);
 
   // Submit
   const handleSubmit = useCallback(async () => {
@@ -136,12 +115,19 @@ const FeedbackForm: FC = () => {
     setErrorMsg("");
 
     const payload = {
-      sessao: session,
+      sessao: {
+        nomeDoJogo: session.gameName,
+        data: session.date,
+        seuNome: session.playerName,
+        numeroDeJogadores: session.playerCount,
+        versao: session.version,
+        duracaoDaPartida: session.duration,
+      },
       escalas: Object.fromEntries(
-        SCALE_QUESTIONS.map((q) => [q.title, scales[q.num] ?? null])
+        t.feedback.scaleQuestions.map((q) => [q.title, scales[q.num] ?? null])
       ),
       perguntasAbertas: Object.fromEntries(
-        OPEN_QUESTIONS.map((q) => [q.title, openAnswers[q.num] ?? ""])
+        t.feedback.openQuestions.map((q) => [q.title, openAnswers[q.num] ?? ""])
       ),
     };
 
@@ -160,53 +146,57 @@ const FeedbackForm: FC = () => {
       setStatus("success");
     } catch (err) {
       setStatus("error");
-      setErrorMsg(err instanceof Error ? err.message : "Erro desconhecido");
+      setErrorMsg(err instanceof Error ? err.message : "Unknown error");
     }
-  }, [session, scales, openAnswers]);
+  }, [session, scales, openAnswers, t.feedback.scaleQuestions, t.feedback.openQuestions]);
 
   // Reset
   const handleReset = useCallback(() => {
-    if (!confirm("Tem certeza que deseja limpar todas as respostas?")) return;
+    if (!confirm(t.feedback.clearConfirm)) return;
     setSession({
-      nomeDoJogo: "",
-      data: today,
-      seuNome: "",
-      numeroDeJogadores: "",
-      versao: "",
-      duracaoDaPartida: "",
+      gameName: "",
+      date: today,
+      playerName: "",
+      playerCount: "",
+      version: "",
+      duration: "",
     });
     setScales({});
     setOpenAnswers({});
     setStatus("idle");
     setErrorMsg("");
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [today]);
+  }, [today, t.feedback.clearConfirm]);
 
   if (status === "success") {
     return (
       <>
         <style>{globalStyles}</style>
+        <style>{backButtonStyles}</style>
+        <LanguageToggle />
         <div className="container" style={{ textAlign: "center", paddingTop: 120 }}>
           <ForjamundoLogo className="logo-svg" />
           <div style={{ fontSize: "3rem", marginTop: 32, marginBottom: 12 }}>🎲</div>
           <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "2rem", color: "var(--accent)", marginBottom: 8 }}>
-            Feedback Enviado!
+            {t.feedback.successTitle}
           </h2>
           <p style={{ color: "var(--fg-muted)", marginBottom: 32, maxWidth: 400, margin: "0 auto 32px" }}>
-            Obrigado por dedicar seu tempo. Suas respostas são essenciais para
-            melhorarmos o jogo.
+            {t.feedback.successMessage}
           </p>
           <button className="btn btn-secondary" onClick={handleReset}>
-            Enviar Outro Feedback
+            {t.feedback.submitAnother}
           </button>
           <div className="footer">
-            Forjamundo Editora
+            {t.feedback.publisher}
             <br />
             <a href="https://forjamundo.com.br" target="_blank" rel="noreferrer">
               forjamundo.com.br
             </a>
           </div>
         </div>
+        <Link to="/" className="back-fab">
+          {t.landing.backToHome}
+        </Link>
       </>
     );
   }
@@ -214,6 +204,8 @@ const FeedbackForm: FC = () => {
   return (
     <>
       <style>{globalStyles}</style>
+
+      <LanguageToggle />
 
       {/* Progress bar */}
       <div
@@ -235,69 +227,69 @@ const FeedbackForm: FC = () => {
         <div className="header">
           <ForjamundoLogo className="logo-svg" />
           <h1>
-            Formulário de Avaliação de <span>Playtest</span>
+            {t.feedback.pageTitle} <span>{t.feedback.pageTitleHighlight}</span>
           </h1>
-          <p className="subtitle">Forjamundo Editora</p>
+          <p className="subtitle">{t.feedback.publisher}</p>
         </div>
 
         {/* Session */}
         <div className="section animate-in" style={{ animationDelay: "0s" }}>
-          <div className="section-title">Dados da Sessão</div>
+          <div className="section-title">{t.feedback.sessionTitle}</div>
           <div className="field-grid">
             <div className="field">
-              <label>Nome do Jogo</label>
+              <label>{t.feedback.gameName}</label>
               <input
                 type="text"
-                value={session.nomeDoJogo}
-                onChange={handleSessionChange("nomeDoJogo")}
-                placeholder="Ex: Folkloria"
+                value={session.gameName}
+                onChange={handleSessionChange("gameName")}
+                placeholder={t.feedback.gameNamePlaceholder}
               />
             </div>
             <div className="field">
-              <label>Data</label>
+              <label>{t.feedback.date}</label>
               <input
                 type="date"
-                value={session.data}
-                onChange={handleSessionChange("data")}
+                value={session.date}
+                onChange={handleSessionChange("date")}
               />
             </div>
             <div className="field">
-              <label>Seu Nome</label>
+              <label>{t.feedback.yourName}</label>
               <input
                 type="text"
-                value={session.seuNome}
-                onChange={handleSessionChange("seuNome")}
-                placeholder="Nome do playtester"
+                value={session.playerName}
+                onChange={handleSessionChange("playerName")}
+                placeholder={t.feedback.yourNamePlaceholder}
               />
             </div>
             <div className="field">
-              <label>Número de Jogadores</label>
+              <label>{t.feedback.playerCount}</label>
               <input
                 type="number"
                 min={1}
                 max={20}
-                value={session.numeroDeJogadores}
-                onChange={handleSessionChange("numeroDeJogadores")}
-                placeholder="Ex: 4"
+                value={session.playerCount}
+                onChange={handleSessionChange("playerCount")}
+                placeholder={t.feedback.playerCountPlaceholder}
               />
             </div>
             <div className="field">
-              <label>Versão / Iteração</label>
+              <label>{t.feedback.version}</label>
               <input
                 type="text"
-                value={session.versao}
-                onChange={handleSessionChange("versao")}
-                placeholder="Ex: v3.2"
+                value={session.version}
+                onChange={handleSessionChange("version")}
+                placeholder={t.feedback.versionPlaceholder}
               />
-              <span className="hint">Caso não tenha certeza, deixe em branco.</span>
+              <span className="hint">{t.feedback.versionHint}</span>
             </div>
             <div className="field">
-              <label>Duração da Partida</label>
+              <label>{t.feedback.duration}</label>
               <input
                 type="text"
-                value={session.duracaoDaPartida}
-                onChange={handleSessionChange("duracaoDaPartida")}
-                placeholder="Ex: 45 min"
+                value={session.duration}
+                onChange={handleSessionChange("duration")}
+                placeholder={t.feedback.durationPlaceholder}
               />
             </div>
           </div>
@@ -305,11 +297,11 @@ const FeedbackForm: FC = () => {
 
         {/* Scale Questions */}
         <div className="section animate-in" style={{ animationDelay: "0.05s" }}>
-          <div className="section-title">Avaliação em Escala</div>
+          <div className="section-title">{t.feedback.scaleTitle}</div>
           <p style={{ fontSize: "0.8rem", color: "var(--fg-muted)", marginBottom: 20, fontWeight: 300 }}>
-            1 = Muito Ruim &nbsp;/&nbsp; 10 = Excelente
+            {t.feedback.scaleHint}
           </p>
-          {SCALE_QUESTIONS.map((q) => (
+          {t.feedback.scaleQuestions.map((q) => (
             <div key={q.num} className="scale-question">
               <div className="q-header">
                 <span className="q-number">{q.num}.</span>
@@ -332,8 +324,8 @@ const FeedbackForm: FC = () => {
 
         {/* Open Questions */}
         <div className="section animate-in" style={{ animationDelay: "0.1s" }}>
-          <div className="section-title">Perguntas Abertas</div>
-          {OPEN_QUESTIONS.map((q) => (
+          <div className="section-title">{t.feedback.openTitle}</div>
+          {t.feedback.openQuestions.map((q) => (
             <div key={q.num} className="open-question">
               <div className="q-header">
                 <span className="q-number">{q.num}.</span>
@@ -343,7 +335,7 @@ const FeedbackForm: FC = () => {
               <textarea
                 value={openAnswers[q.num] ?? ""}
                 onChange={(e) => handleOpen(q.num, e.target.value)}
-                placeholder="Escreva sua resposta aqui..."
+                placeholder={t.feedback.openPlaceholder}
               />
             </div>
           ))}
@@ -363,7 +355,7 @@ const FeedbackForm: FC = () => {
                 fontSize: "0.9rem",
               }}
             >
-              Erro ao enviar: {errorMsg}. Tente novamente.
+              {t.feedback.errorPrefix} {errorMsg}. {t.feedback.errorSuffix}
             </div>
           )}
           <div className="actions">
@@ -372,28 +364,70 @@ const FeedbackForm: FC = () => {
               onClick={handleSubmit}
               disabled={status === "submitting"}
             >
-              {status === "submitting" ? "Enviando..." : "Enviar Feedback"}
+              {status === "submitting" ? t.feedback.submittingButton : t.feedback.submitButton}
             </button>
             <button className="btn btn-secondary" onClick={handleReset}>
-              Limpar Formulário
+              {t.feedback.clearButton}
             </button>
           </div>
         </div>
 
         {/* Footer */}
         <div className="footer">
-          Forjamundo Editora
+          {t.feedback.publisher}
           <br />
-          Baseado nas metodologias de Jamey Stegmaier (Stonemaier Games) e Adam
-          Porter (Adam in Wales)
+          {t.feedback.footerCredit}
           <br />
           <a href="https://forjamundo.com.br" target="_blank" rel="noreferrer">
             forjamundo.com.br
           </a>
         </div>
       </div>
+
+      <Link to="/" className="back-fab">
+        {t.landing.backToHome}
+      </Link>
+
+      <style>{backButtonStyles}</style>
     </>
   );
 };
+
+const backButtonStyles = `
+  .back-fab {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    z-index: 100;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    padding: 14px 24px;
+    border-radius: 8px;
+    background: rgba(98, 60, 21, 0.9);
+    color: #F6EDDF;
+    text-decoration: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    transition: all 0.25s;
+    backdrop-filter: blur(8px);
+  }
+
+  .back-fab:hover {
+    background: #623C15;
+    box-shadow: 0 6px 28px rgba(98, 60, 21, 0.4);
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 600px) {
+    .back-fab {
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      text-align: center;
+      font-size: 0.95rem;
+      padding: 12px 18px;
+    }
+  }
+`;
 
 export default FeedbackForm;

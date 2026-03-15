@@ -1,10 +1,13 @@
 import { useState, type FC, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { ForjamundoLogo } from "./shared";
+import { useTranslation } from "./i18n";
+import { LanguageToggle } from "./components/LanguageToggle";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 
 const LandingPage: FC = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -40,46 +43,42 @@ const LandingPage: FC = () => {
     <>
       <style>{landingStyles}</style>
 
+      <LanguageToggle />
+
       <div className="landing-bg">
         <div className="landing-overlay" />
 
         <div className="landing-content">
           <ForjamundoLogo className="landing-logo" />
 
-          <h1 className="landing-title">Em Construção</h1>
-          <p className="landing-subtitle">
-            Estamos preparando algo incrível para você. Em breve, novidades!
-          </p>
+          <h1 className="landing-title">{t.landing.title}</h1>
+          <p className="landing-subtitle">{t.landing.subtitle}</p>
 
           <div className="subscribe-section">
-            <h2 className="subscribe-title">Fique por dentro</h2>
-            <p className="subscribe-desc">
-              Deixe seu e-mail para receber novidades sobre nossos jogos e lançamentos.
-            </p>
+            <h2 className="subscribe-title">{t.landing.subscribeTitle}</h2>
+            <p className="subscribe-desc">{t.landing.subscribeDesc}</p>
 
             {status === "success" ? (
-              <div className="success-message">
-                Obrigado! Você receberá nossas novidades em breve.
-              </div>
+              <div className="success-message">{t.landing.successMessage}</div>
             ) : (
               <form className="subscribe-form" onSubmit={handleSubmit}>
                 <input
                   type="email"
-                  placeholder="seu@email.com"
+                  placeholder={t.landing.emailPlaceholder}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={status === "submitting"}
                 />
                 <button type="submit" disabled={status === "submitting"}>
-                  {status === "submitting" ? "Enviando..." : "Cadastrar"}
+                  {status === "submitting" ? t.landing.submittingButton : t.landing.submitButton}
                 </button>
               </form>
             )}
 
             {status === "error" && (
               <div className="error-message">
-                {errorMsg || "Erro ao cadastrar. Tente novamente."}
+                {errorMsg || t.landing.errorMessage}
               </div>
             )}
           </div>
@@ -92,7 +91,7 @@ const LandingPage: FC = () => {
         </div>
 
         <Link to="/feedback" className="feedback-fab">
-          Acessar Folha de Feedback →
+          {t.landing.feedbackButton}
         </Link>
       </div>
     </>
