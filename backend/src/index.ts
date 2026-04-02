@@ -263,6 +263,26 @@ app.get("/api/feedback/csv", basicAuth, (_req, res) => {
   res.send(csv);
 });
 
+// Delete subscriber (protected)
+app.delete("/api/subscribers/:id", basicAuth, (req, res) => {
+  const result = db.prepare("DELETE FROM subscribers WHERE id = ?").run(req.params.id);
+  if (result.changes === 0) {
+    res.status(404).json({ success: false, message: "Inscrito não encontrado" });
+  } else {
+    res.json({ success: true });
+  }
+});
+
+// Delete feedback (protected)
+app.delete("/api/feedback/:id", basicAuth, (req, res) => {
+  const result = db.prepare("DELETE FROM feedback WHERE id = ?").run(req.params.id);
+  if (result.changes === 0) {
+    res.status(404).json({ success: false, message: "Feedback não encontrado" });
+  } else {
+    res.json({ success: true });
+  }
+});
+
 // ── Start ───────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`\n🔨 Forjamundo Playtest API`);
