@@ -52,8 +52,8 @@ npm run dev
 4. No backend, adicionar volume montado em `/data` para persistir o SQLite
 5. Configurar variáveis de ambiente no backend:
    - `RESEND_API_KEY` — API key do Resend (https://resend.com)
-   - `FROM_EMAIL` — Email verificado no Resend (ex: noreply@forjamundo.com.br)
-   - `TO_EMAIL` — contato@forjamundo.com.br
+   - `FROM_EMAIL`
+   - `TO_EMAIL`
    - `DATABASE_PATH` — /data/feedback.db
    - `CORS_ORIGIN` — URL do frontend no Railway
 
@@ -64,8 +64,8 @@ npm run dev
 | `PORT` | Porta do servidor | `3001` |
 | `DATABASE_PATH` | Caminho do SQLite | `./feedback.db` |
 | `RESEND_API_KEY` | Key do Resend (opcional) | — |
-| `FROM_EMAIL` | Remetente | `noreply@forjamundo.com.br` |
-| `TO_EMAIL` | Destinatário | `contato@forjamundo.com.br` |
+| `FROM_EMAIL` | Remetente |  |
+| `TO_EMAIL` | Destinatário |  |
 | `CORS_ORIGIN` | Origem permitida | `http://localhost:5173` |
 
 > **Nota**: O email via Resend é opcional. Sem a API key, os feedbacks são salvos no banco normalmente, apenas sem notificação por email.
